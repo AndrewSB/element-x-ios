@@ -1,5 +1,5 @@
 //
-// Copyright 2022 New Vector Ltd
+// Copyright 2023 New Vector Ltd
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,28 +14,6 @@
 // limitations under the License.
 //
 
-import ModuleSDK
-import SwiftUI
-
-// MARK: - Coordinator
-
-enum OnboardingScreenCoordinatorAction {
-    case login
-}
-
-/// The content displayed in a single screen page.
-struct OnboardingScreenPageContent {
-    let title: AttributedString
-    let message: String
-    let image: ImageAsset
-}
-
-enum OnboardingScreenViewModelAction {
-    case login
-}
-
-struct OnboardingScreenViewState: BindableState { }
-
-enum OnboardingScreenViewAction {
-    case login
+public protocol ModuleSDKService {
+    var key: ModuleSDKServiceKey { get }
 }

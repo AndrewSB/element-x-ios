@@ -176,6 +176,8 @@ targets:
     - package: MatrixRustSDK
     - package: DesignKit
     - package: Compound
+    - package: ModuleSDK
+    - package: ModuleSDKConfig
     - package: Algorithms
     - package: AnalyticsEvents
     - package: Collections

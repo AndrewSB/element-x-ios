@@ -16,14 +16,17 @@
 
 import CryptoKit
 import Foundation
-
 import MatrixRustSDK
+import ModuleSDK
 
 struct RestorationToken: Codable, Equatable {
     let session: MatrixRustSDK.Session
     let pusherNotificationClientIdentifier: String?
 
     init(session: MatrixRustSDK.Session) {
+        let rustSDKModule: RustSDKModuleProtocol? = ModuleSDKServiceLocator.shared.getService(.rustSDKModule)
+        rustSDKModule?.doSomething(session: session)
+
         self.session = session
         if let data = session.userId.data(using: .utf8) {
             let digest = SHA256.hash(data: data)

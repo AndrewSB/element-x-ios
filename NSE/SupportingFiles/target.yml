@@ -33,6 +33,7 @@ targets:
 
     dependencies:
       - package: MatrixRustSDK
+      - package: ModuleSDK
       - package: KeychainAccess
       - package: Kingfisher
       - package: Collections

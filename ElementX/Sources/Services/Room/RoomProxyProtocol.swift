@@ -55,6 +55,7 @@ protocol RoomProxyProtocol {
     var isSpace: Bool { get }
     var isEncrypted: Bool { get }
     var isTombstoned: Bool { get }
+    var isCallOngoing: Bool { get }
     var canonicalAlias: String? { get }
     var alternativeAliases: [String] { get }
     var hasUnreadNotifications: Bool { get }

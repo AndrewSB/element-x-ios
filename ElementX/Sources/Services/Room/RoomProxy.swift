@@ -151,6 +151,10 @@ class RoomProxy: RoomProxyProtocol {
         room.isTombstoned()
     }
     
+    var isCallOngoing: Bool {
+        true
+    }
+    
     var canonicalAlias: String? {
         room.canonicalAlias()
     }

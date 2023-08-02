@@ -62,6 +62,7 @@ class RoomScreenViewModel: RoomScreenViewModelType, RoomScreenViewModelProtocol 
                                                          timelineStyle: appSettings.timelineStyle,
                                                          readReceiptsEnabled: appSettings.readReceiptsEnabled,
                                                          isEncryptedOneToOneRoom: roomProxy.isEncryptedOneToOneRoom,
+                                                         isCallOngoing: roomProxy.isCallOngoing,
                                                          bindings: .init(reactionsCollapsed: [:])),
                    imageProvider: mediaProvider)
         
@@ -143,19 +144,25 @@ class RoomScreenViewModel: RoomScreenViewModelType, RoomScreenViewModelProtocol 
             if state.swiftUITimelineEnabled {
                 renderPendingTimelineItems()
             }
+        
         case let .selectedPollOption(pollStartID, optionID):
             sendPollResponse(pollStartID: pollStartID, optionID: optionID)
+        case let .endPoll(pollStartID):
+            endPoll(pollStartID: pollStartID)
+            
         case .playPauseAudio(let itemID):
             Task { await timelineController.playPauseAudio(for: itemID) }
         case .seekAudio(let itemID, let progress):
             Task { await timelineController.seekAudio(for: itemID, progress: progress) }
+        
         case .enableLongPress(let itemID):
             guard state.longPressDisabledItemID == itemID else { return }
             state.longPressDisabledItemID = nil
         case .disableLongPress(let itemID):
             state.longPressDisabledItemID = itemID
-        case let .endPoll(pollStartID):
-            endPoll(pollStartID: pollStartID)
+            
+        case .presentCall:
+            actionsSubject.send(.displayCallScreen)
         }
     }
 

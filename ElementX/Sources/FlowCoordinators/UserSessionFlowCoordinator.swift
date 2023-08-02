@@ -85,6 +85,8 @@ class UserSessionFlowCoordinator: FlowCoordinatorProtocol {
             case .dismissedRoom:
                 stateMachine.processEvent(.deselectRoom)
                 analytics.signpost.endRoomFlow()
+            case .presentCallScreen:
+                self.presentCallScreen()
             }
         }
         .store(in: &cancellables)
@@ -451,5 +453,13 @@ class UserSessionFlowCoordinator: FlowCoordinatorProtocol {
         sidebarNavigationStackCoordinator.push(coordinator, animated: animated) { [weak self] in
             self?.stateMachine.processEvent(.closedInvitesScreen)
         }
+    }
+    
+    // MARK: Calls
+    
+    private func presentCallScreen() {
+        let callScreenCoordinator = CallScreenCoordinator(parameters: .init())
+        
+        navigationSplitCoordinator.setSheetCoordinator(callScreenCoordinator, animated: true)
     }
 }

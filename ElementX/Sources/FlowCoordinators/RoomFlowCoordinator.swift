@@ -22,6 +22,7 @@ import UserNotifications
 enum RoomFlowCoordinatorAction: Equatable {
     case presentedRoom(String)
     case dismissedRoom
+    case presentCallScreen
 }
 
 class RoomFlowCoordinator: FlowCoordinatorProtocol {
@@ -352,6 +353,8 @@ class RoomFlowCoordinator: FlowCoordinatorProtocol {
                     stateMachine.tryEvent(.presentRoomMemberDetails(member: .init(value: member)))
                 case .presentMessageForwarding(let itemID):
                     stateMachine.tryEvent(.presentMessageForwarding(itemID: itemID))
+                case .presentCallScreen:
+                    actionsSubject.send(.presentCallScreen)
                 }
             }
             .store(in: &cancellables)

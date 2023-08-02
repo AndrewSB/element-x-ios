@@ -32,6 +32,9 @@ struct RoomScreen: View {
     var body: some View {
         timeline
             .background(Color.compound.bgCanvasDefault.ignoresSafeArea())
+            .safeAreaInset(edge: .top, spacing: 0) {
+                callIndicator
+            }
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 composerToolbar
                     .padding(.leading, 5)
@@ -147,12 +150,36 @@ struct RoomScreen: View {
         }
     }
     
+    @ViewBuilder
+    private var callIndicator: some View {
+        if context.viewState.isCallOngoing {
+            Button("Call happening") {
+                context.send(viewAction: .presentCall)
+            }
+            .padding(.vertical, 8.0)
+            .frame(maxWidth: .infinity)
+            .background(Color.compound.textActionAccent)
+        }
+    }
+    
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
         // .principal + .primaryAction works better than .navigation leading + trailing
         // as the latter disables interaction in the action button for rooms with long names
         ToolbarItem(placement: .principal) {
             RoomHeaderView(context: context)
+        }
+        
+        ToolbarItem(placement: .primaryAction) {
+            Button {
+                context.send(viewAction: .presentCall)
+            } label: {
+                if context.viewState.isCallOngoing {
+                    Image(systemSymbol: .videoBadgeCheckmark)
+                } else {
+                    Image(systemSymbol: .video)
+                }
+            }
         }
     }
 
@@ -166,7 +193,7 @@ struct RoomScreen: View {
 struct RoomScreen_Previews: PreviewProvider, TestablePreview {
     static let viewModel = RoomScreenViewModel(timelineController: MockRoomTimelineController(),
                                                mediaProvider: MockMediaProvider(),
-                                               roomProxy: RoomProxyMock(with: .init(displayName: "Preview room")),
+                                               roomProxy: RoomProxyMock(with: .init(displayName: "Preview room", isCallOngoing: true)),
                                                appSettings: ServiceLocator.shared.settings,
                                                analytics: ServiceLocator.shared.analytics,
                                                userIndicatorController: ServiceLocator.shared.userIndicatorController)

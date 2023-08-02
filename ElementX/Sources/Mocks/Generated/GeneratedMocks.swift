@@ -777,6 +777,11 @@ class RoomProxyMock: RoomProxyProtocol {
         set(value) { underlyingIsTombstoned = value }
     }
     var underlyingIsTombstoned: Bool!
+    var isCallOngoing: Bool {
+        get { return underlyingIsCallOngoing }
+        set(value) { underlyingIsCallOngoing = value }
+    }
+    var underlyingIsCallOngoing: Bool!
     var canonicalAlias: String?
     var alternativeAliases: [String] = []
     var hasUnreadNotifications: Bool {

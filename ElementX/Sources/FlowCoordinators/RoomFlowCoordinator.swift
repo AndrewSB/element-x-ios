@@ -309,6 +309,8 @@ class RoomFlowCoordinator: FlowCoordinatorProtocol {
         
         let userID = userSession.clientProxy.userID
         
+        let mediaPlayerProvider = MediaPlayerProvider(mediaProvider: userSession.mediaProvider)
+        
         let timelineItemFactory = RoomTimelineItemFactory(userID: userID,
                                                           mediaProvider: userSession.mediaProvider,
                                                           attributedStringBuilder: AttributedStringBuilder(permalinkBaseURL: appSettings.permalinkBaseURL),
@@ -317,7 +319,8 @@ class RoomFlowCoordinator: FlowCoordinatorProtocol {
         
         let timelineController = roomTimelineControllerFactory.buildRoomTimelineController(roomProxy: roomProxy,
                                                                                            timelineItemFactory: timelineItemFactory,
-                                                                                           mediaProvider: userSession.mediaProvider)
+                                                                                           mediaProvider: userSession.mediaProvider,
+                                                                                           mediaPlayerProvider: mediaPlayerProvider)
         self.timelineController = timelineController
         
         analytics.trackViewRoom(isDM: roomProxy.isDirect, isSpace: roomProxy.isSpace)

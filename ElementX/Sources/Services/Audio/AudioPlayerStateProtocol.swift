@@ -14,19 +14,18 @@
 // limitations under the License.
 //
 
-import Combine
 import Foundation
 
-enum AudioPlayerCallback {
-    case didStartLoading
-    case didFinishLoading
-    case didStartPlaying
-    case didPausePlaying
-    case didStopPlaying
-    case didFinishPlaying
-    case didFailWithError(error: Error)
-}
+@MainActor
+protocol AudioPlayerStateProtocol: AnyObject, ObservableObject {
+    var duration: Double { get }
+    var waveform: Waveform { get }
 
-protocol AudioPlayerProtocol: MediaPlayerProtocol {
-    var callbacks: AnyPublisher<AudioPlayerCallback, Never> { get }
+    var loading: Bool { get }
+    var playing: Bool { get }
+    var progress: Double { get }
+    
+    func updateState(progress: Double) async
+    func attachAudioPlayer(_ audioPlayer: AudioPlayerProtocol)
+    func detachAudioPlayer()
 }

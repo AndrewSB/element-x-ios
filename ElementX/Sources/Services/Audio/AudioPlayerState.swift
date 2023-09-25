@@ -17,8 +17,7 @@
 import Combine
 import Foundation
 
-@MainActor
-class VoiceRoomPlaybackViewState: ObservableObject {
+class AudioPlayerState: AudioPlayerStateProtocol {
     let duration: Double
     let waveform: Waveform
     @Published private(set) var loading: Bool
@@ -28,6 +27,8 @@ class VoiceRoomPlaybackViewState: ObservableObject {
     private var audioPlayer: AudioPlayerProtocol?
     private var cancellables: Set<AnyCancellable> = []
     private var cancellableTimer: AnyCancellable?
+    
+    private let id = UUID()
 
     init(duration: Double = 0.0, waveform: Waveform? = nil, progress: Double = 0.0) {
         self.duration = duration
@@ -39,14 +40,14 @@ class VoiceRoomPlaybackViewState: ObservableObject {
     
     func updateState(progress: Double) async {
         let progress = max(0.0, min(progress, 1.0))
-        if let audioPlayer, audioPlayer.state == .playing {
+        self.progress = progress
+        if let audioPlayer {
             await audioPlayer.seek(to: progress)
-        } else {
-            self.progress = progress
         }
     }
         
     func attachAudioPlayer(_ audioPlayer: AudioPlayerProtocol) {
+        MXLog.debug("** attachAudioPlayer \(id.uuidString)")
         if self.audioPlayer != nil {
             detachAudioPlayer()
         }
@@ -55,25 +56,35 @@ class VoiceRoomPlaybackViewState: ObservableObject {
     }
     
     func detachAudioPlayer() {
-        audioPlayer = nil
+        MXLog.debug("** dettachAudioPlayer \(id.uuidString)")
+        stopPublishProgression()
         cancellables = []
+        audioPlayer = nil
+        loading = false
+        playing = false
     }
     
     private func subscribeToAudioPlayer(audioPlayer: AudioPlayerProtocol) {
         audioPlayer.callbacks
             .receive(on: DispatchQueue.main)
             .sink { [weak self] callback in
-                self?.handleAudioPlayerCallback(callback)
+                guard let self else {
+                    return
+                }
+                self.handleAudioPlayerCallback(callback)
             }
             .store(in: &cancellables)
     }
     
     private func handleAudioPlayerCallback(_ callback: AudioPlayerCallback) {
+        MXLog.error("[\(id.uuidString)] handle audio player callback: \(callback)")
+        
+        loading = false
+        playing = false
         switch callback {
         case .didStartLoading:
             loading = true
         case .didFinishLoading:
-            loading = false
             if let audioPlayer {
                 Task {
                     await restoreAudioPlayerState(audioPlayer: audioPlayer)
@@ -83,19 +94,14 @@ class VoiceRoomPlaybackViewState: ObservableObject {
             playing = true
             startPublishProgression()
         case .didPausePlaying:
-            playing = false
             stopPublishProgression()
         case .didStopPlaying:
-            playing = false
             stopPublishProgression()
         case .didFinishPlaying:
-            playing = false
             stopPublishProgression()
             progress = 0.0
         case .didFailWithError(let error):
-            MXLog.error("[VoiceRoomPlaybackViewState] audio player did fail with error: \(error)")
-            loading = false
-            playing = false
+            MXLog.error("audio player did fail with error: \(error)")
             stopPublishProgression()
         }
     }
@@ -108,8 +114,11 @@ class VoiceRoomPlaybackViewState: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink(receiveValue: { [weak self] _ in
                 guard let self else { return }
-                if let currentTime = self.audioPlayer?.currentTime {
+                if let currentTime = self.audioPlayer?.currentTime, self.duration > 0 {
                     self.progress = currentTime / self.duration
+                    if self.progress == 0.0 {
+                        MXLog.debug("progress -> 0.0")
+                    }
                 }
             })
     }

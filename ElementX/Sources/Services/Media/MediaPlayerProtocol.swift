@@ -17,7 +17,7 @@
 import Foundation
 
 enum MediaPlayerState {
-    case prepareToPlay
+    case loading
     case playing
     case paused
     case stopped
@@ -30,7 +30,7 @@ protocol MediaPlayerProtocol {
     var url: URL? { get }
     var state: MediaPlayerState { get }
     
-    func load(mediaSource: MediaSourceProxy, mediaFileHandle: MediaFileHandleProxy) async throws
+    func load(mediaSource: MediaSourceProxy, mediaProvider: MediaProviderProtocol) async throws
     func unloadContent()
     
     func play() async throws

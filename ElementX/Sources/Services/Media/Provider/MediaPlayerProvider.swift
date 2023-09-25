@@ -15,41 +15,34 @@
 //
 
 import Foundation
+import UniformTypeIdentifiers
 
 class MediaPlayerProvider: MediaPlayerProviderProtocol {
     private let mediaProvider: MediaProviderProtocol
     private var audioPlayer: AudioPlayerProtocol?
-        
+            
     init(mediaProvider: MediaProviderProtocol) {
         self.mediaProvider = mediaProvider
     }
     
-    func player(for mediaSource: MediaSourceProxy) async -> MediaPlayerProtocol? {
-        let audioPlayer = audioPlayer ?? AudioPlayer()
+    deinit {
+        audioPlayer = nil
+    }
+    
+    func player(for mediaSource: MediaSourceProxy) -> MediaPlayerProtocol? {
+        guard let mimeType = mediaSource.mimeType else {
+            MXLog.error("Unknown mime type")
+            return nil
+        }
         
-        if audioPlayer.url == mediaSource.url {
+        if mimeType.starts(with: "audio/") {
+            if self.audioPlayer == nil {
+                self.audioPlayer = AudioPlayer()
+            }
             return audioPlayer
+        } else {
+            MXLog.error("Unsupported media type: \(mediaSource.mimeType ?? "unknown")")
+            return nil
         }
-        
-        if audioPlayer.url != mediaSource.url {
-            audioPlayer.stop()
-            audioPlayer.unloadContent()
-        }
-        
-        if audioPlayer.url == nil {
-            guard case .success(let fileHandle) = await mediaProvider.loadFileFromSource(mediaSource) else {
-                return nil
-            }
-
-            do {
-                try await audioPlayer.load(mediaSource: mediaSource, mediaFileHandle: fileHandle)
-            } catch {
-                MXLog.error("[MediaPlayerProvider] failed to load media: \(error)")
-                return nil
-            }
-        }
-        
-        self.audioPlayer = audioPlayer
-        return audioPlayer
     }
 }

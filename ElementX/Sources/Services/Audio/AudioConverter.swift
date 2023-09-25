@@ -24,8 +24,40 @@ enum AudioConverterError: Error {
     case cancelled
 }
 
-enum AudioConverter {
-    static func convertToOpusOgg(sourceURL: URL, destinationURL: URL) async throws {
+struct AudioConverter {
+    private var temporaryFilesFolderURL: URL {
+        FileManager.default.temporaryDirectory.appendingPathComponent("media")
+    }
+    
+    init() {
+        try? setupTemporaryFilesFolder()
+    }
+
+    func convertAudioFileIfNeeded(mediaFileHandle: MediaFileHandleProxy, mediaSource: MediaSourceProxy) async throws -> URL {
+        // Convert from ogg if needed
+        if mediaFileHandle.url.hasSupportedAudioExtension {
+            return mediaFileHandle.url
+        } else {
+            var newURL = temporaryFilesFolderURL.appendingPathComponent(mediaSource.url.lastPathComponent).deletingPathExtension()
+            let fileExtension = "m4a"
+            newURL.appendPathExtension(fileExtension)
+
+            // Do we already have a converted version?
+            if !FileManager.default.fileExists(atPath: newURL.path()) {
+                MXLog.debug("[AudioPlayer] conversion is needed")
+
+                do {
+                    try await convertToMPEG4AACIfNeeded(sourceURL: mediaFileHandle.url, destinationURL: newURL)
+                } catch {
+                    MXLog.error("[AudioPlayer] failed to convert to MPEG4AAC: \(error)")
+                    throw AudioPlayerError.genericError
+                }
+            }
+            return newURL
+        }
+    }
+    
+    private func convertToOpusOgg(sourceURL: URL, destinationURL: URL) async throws {
         do {
             try OGGConverter.convertM4aFileToOpusOGG(src: sourceURL, dest: destinationURL)
         } catch {
@@ -33,8 +65,9 @@ enum AudioConverter {
         }
     }
     
-    static func convertToMPEG4AACIfNeeded(sourceURL: URL, destinationURL: URL) async throws {
-        MXLog.debug("[AudioConverter] converting audio file to \(destinationURL.absoluteString)")
+    private func convertToMPEG4AACIfNeeded(sourceURL: URL, destinationURL: URL) async throws {
+        let start = Date()
+        MXLog.debug("[AudioConverter] converting audio file from \(sourceURL.absoluteString) to \(destinationURL.absoluteString)")
         do {
             if sourceURL.hasSupportedAudioExtension {
                 try FileManager.default.copyItem(atPath: sourceURL.path, toPath: destinationURL.path)
@@ -44,9 +77,10 @@ enum AudioConverter {
         } catch {
             throw AudioConverterError.conversionFailed(error)
         }
+        MXLog.debug("[AudioConverter] converting audio file done in \(Date().timeIntervalSince(start))")
     }
     
-    static func mediaDurationAt(_ sourceURL: URL) async throws -> TimeInterval {
+    private func mediaDurationAt(_ sourceURL: URL) async throws -> TimeInterval {
         let audioAsset = AVURLAsset(url: sourceURL, options: nil)
 
         do {
@@ -54,6 +88,24 @@ enum AudioConverter {
             return CMTimeGetSeconds(duration)
         } catch {
             throw AudioConverterError.getDurationFailed(error)
+        }
+    }
+    
+    
+    // MARK: - Cache
+    
+    private func setupTemporaryFilesFolder() throws {
+        let url = temporaryFilesFolderURL
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
+    }
+    
+    private func clearCache() {
+        if FileManager.default.fileExists(atPath: temporaryFilesFolderURL.path) {
+            do {
+                try FileManager.default.removeItem(at: temporaryFilesFolderURL)
+            } catch {
+                MXLog.error("[MediaPlayerProvider] Failed clearing cached disk files", context: error)
+            }
         }
     }
 }
